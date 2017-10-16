@@ -3,6 +3,7 @@ import json
 import asyncio
 import aiohttp
 import async_timeout
+import requests
 
 from .exception import PyVLXException, InvalidToken
 
@@ -16,30 +17,30 @@ class Interface:
         self.token = None
 
     # pylint: disable=too-many-arguments
-    async def api_call(self, verb, action, params=None, add_authorization_token=True, retry=False):
+    def api_call(self, verb, action, params=None, add_authorization_token=True, retry=False):
         """Send api call."""
         if add_authorization_token and not self.token:
-            await self.refresh_token()
+            self.refresh_token()
 
         try:
-            return await self._api_call_impl(verb, action, params, add_authorization_token)
+            return self._api_call_impl(verb, action, params, add_authorization_token)
         except InvalidToken:
             if not retry and add_authorization_token:
-                await self.refresh_token()
+                self.refresh_token()
                 # Recursive call of api_call
-                return await self.api_call(verb, action, params, add_authorization_token, True)
+                return self.api_call(verb, action, params, add_authorization_token, True)
             else:
                 raise
 
-    async def _api_call_impl(self, verb, action, params=None, add_authorization_token=True):
+    def _api_call_impl(self, verb, action, params=None, add_authorization_token=True):
         url = self.create_api_url(self.config.host, verb)
         body = self.create_body(action, params)
         headers = self.create_headers(add_authorization_token, self.token)
-        return await self._do_http_request(url, body, headers)
+        return self._do_http_request(url, body, headers)
 
-    async def _do_http_request(self, url, body, headers):
+    def _do_http_request(self, url, body, headers):
         try:
-            return await self._do_http_request_impl(url, body, headers)
+            return self._do_http_request_impl(url, body, headers)
         except asyncio.TimeoutError:
             raise PyVLXException("Request timeout when talking to VELUX API")
         except aiohttp.ClientError:
@@ -47,29 +48,23 @@ class Interface:
         except OSError:
             raise PyVLXException("OS error when talking to VELUX API")
 
-    async def _do_http_request_impl(self, url, body, headers):
+    def _do_http_request_impl(self, url, body, headers):
         print(url, body, headers)
-        async with aiohttp.ClientSession() as session:
-            with async_timeout.timeout(10):
-                async with session.post(url, data=json.dumps(body), headers=headers) as response:
-                    response = await response.text()
-                    response = self.fix_response(response)
-                    print(response)
-                    json_response = json.loads(response)
-                    self.evaluate_response(json_response)
-                    # print(json.dumps(json_response, indent=4, sort_keys=True))
-                    return json_response
 
-    async def refresh_token(self):
+        r = requests.post(url, data=json.dumps(body), headers=headers, timeout=10)
+        return json.loads(self.fix_response(r.text))
+
+        
+    def refresh_token(self):
         """Refresh API token from KLF 200."""
-        json_response = await self.api_call('auth', 'login', {'password': self.config.password}, add_authorization_token=False)
+        json_response = self.api_call('auth', 'login', {'password': self.config.password}, add_authorization_token=False)
         if 'token' not in json_response:
             raise PyVLXException('no element token found in response: {0}'.format(json.dumps(json_response)))
         self.token = json_response['token']
 
-    async def disconnect(self):
+    def disconnect(self):
         """Disconnect from KLF 200."""
-        await self.api_call('auth', 'logout', {}, add_authorization_token=True)
+        self.api_call('auth', 'logout', {}, add_authorization_token=True)
         self.token = None
 
     @staticmethod

@@ -38,9 +38,9 @@ class Devices:
             raise TypeError()
         self.__devices.append(device)
 
-    async def load(self):
+    def load(self):
         """Load devices from KLF 200."""
-        json_response = await self.pyvlx.interface.api_call('products', 'get')
+        json_response = self.pyvlx.interface.api_call('products', 'get')
         self.data_import(json_response)
 
     def data_import(self, json_response):

@@ -17,9 +17,9 @@ class Scene:
         ident = item['id']
         return cls(pyvlx, ident, name)
 
-    async def run(self):
+    def run(self):
         """Run scene."""
-        await self.pyvlx.interface.api_call('scenes', 'run', {'id': self.ident})
+        self.pyvlx.interface.api_call('scenes', 'run', {'id': self.ident})
 
     def get_name(self):
         """Return name of object."""

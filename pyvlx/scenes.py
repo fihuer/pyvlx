@@ -36,9 +36,9 @@ class Scenes:
             raise TypeError()
         self.__scenes.append(scene)
 
-    async def load(self):
+    def load(self):
         """Load scenes from KLF 200."""
-        json_response = await self.pyvlx.interface.api_call('scenes', 'get')
+        json_response = self.pyvlx.interface.api_call('scenes', 'get')
         self.data_import(json_response)
 
     def data_import(self, json_response):

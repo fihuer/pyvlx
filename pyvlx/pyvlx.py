@@ -24,18 +24,18 @@ class PyVLX:
         self.devices = Devices(self)
         self.scenes = Scenes(self)
 
-    async def connect(self):
+    def connect(self):
         """Connect to KLF 200."""
-        await self.interface.refresh_token()
+        self.interface.refresh_token()
 
-    async def disconnect(self):
+    def disconnect(self):
         """Disconnect from KLF 200."""
-        await self.interface.disconnect()
+        self.interface.disconnect()
 
-    async def load_devices(self):
+    def load_devices(self):
         """Load devices from KLF 200."""
-        await self.devices.load()
+        self.devices.load()
 
-    async def load_scenes(self):
+    def load_scenes(self):
         """Load scenes from KLF 200."""
-        await self.scenes.load()
+        self.scenes.load()
